@@ -5,6 +5,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@jonasdoesthings/react-activity-rings": "^1.1.2",
     "@mui/icons-material": "^5.15.3",
     "@mui/material": "^5.15.1",
     "@testing-library/jest-dom": "^5.17.0",

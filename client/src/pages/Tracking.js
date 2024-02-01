@@ -1,12 +1,12 @@
 import React from 'react'
 import { Box } from '@mui/material'
 
-const Nutrition = () => {
+const Tracking = () => {
   return (
     <Box flex={6} bgcolor='#003459'>
-        Nutrition
+        Tracking
     </Box>
   )
 }
 
-export default Nutrition
+export default Tracking

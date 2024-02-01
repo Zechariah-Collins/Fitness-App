@@ -2,7 +2,7 @@ import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import Goals from './pages/Goals'
-import Nutrition from './pages/Nutrition'
+import Tracking from './pages/Tracking'
 import Dashboard from './components/Dashboard'
 import { Box } from '@mui/material'
 import { Stack } from '@mui/system'
@@ -16,7 +16,7 @@ const App = () => {
           <Routes>
             <Route path='/' element={<Dashboard/>}/>
             <Route path='/goals' element={<Goals/>}/>
-            <Route path='/nutrition' element={<Nutrition/>}/>
+            <Route path='/tracking' element={<Tracking/>}/>
           </Routes>
         </Stack>
       </Box>

@@ -2,8 +2,8 @@ import React from 'react'
 import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material'
 import HomeIcon from '@mui/icons-material/Home';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
-import RestaurantIcon from '@mui/icons-material/Restaurant';
 import LogoutIcon from '@mui/icons-material/Logout';
+import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 
 const Sidebar = () => {
   return (
@@ -31,11 +31,11 @@ const Sidebar = () => {
             </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-            <ListItemButton component='a' href='/nutrition'>
+            <ListItemButton component='a' href='/tracking'>
                 <ListItemIcon>
-                    <RestaurantIcon style={{color: 'black'}}/>
+                    <AutoGraphIcon style={{color: 'black'}}/>
                 </ListItemIcon>
-                <ListItemText primary="Nutrition" />
+                <ListItemText primary="Tracking" />
             </ListItemButton>
             </ListItem>
         </List>
