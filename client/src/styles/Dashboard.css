@@ -1,0 +1,31 @@
+/* Styles for the default state */
+.custom-button {
+    background-color: black;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 3px solid white;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  /* Styles for the active state */
+  .active {
+    background-color: #007EA7;
+    width: 85px;
+    height: 85px;
+  }
+
+  .active:hover{
+    background-color: #003459;
+}
+  
+  /* Icon styles (assumed, adjust as needed) */
+  .custom-button .MuiSvgIcon-root {
+    color: white;
+    font-size: 35px;
+  }
+  

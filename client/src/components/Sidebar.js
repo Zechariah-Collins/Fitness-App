@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useState} from 'react'
 import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material'
 import HomeIcon from '@mui/icons-material/Home';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
@@ -6,6 +6,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 
 const Sidebar = () => {
+
   return (
     <Box 
         flex={1} 
@@ -44,9 +45,7 @@ const Sidebar = () => {
             <LogoutIcon sx={{mr:3}}/>
             Log Out
         </ListItem>
-    </Box>
-    
-  )
+    </Box>) 
 }
 
 export default Sidebar

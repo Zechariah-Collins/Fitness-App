@@ -1,9 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
-
+const bcrypt = require('bcrypt')
 const authRoutes = require('./routes/auth');
-
+const { restart } = require('nodemon');
+const jwt = require('jsonwebtoken')
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -44,6 +45,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/users', async function (req, res) {
+  const {email, password} = req.body
     try {
         const [rows] = await pool.execute('SELECT * FROM users')
         res.json(rows);
@@ -52,6 +54,49 @@ app.get('/users', async function (req, res) {
 
     }
 });
+
+app.post('/users', async function (req, res) {
+  const salt = await bcrypt.genSalt()
+  const hashedPassword = await bcrypt.hash(req.body.password, salt)
+  console.log(salt, hashedPassword)
+  const user = { email: req.body.email, password: hashedPassword }
+  const query = "INSERT INTO users (email, password) VALUES (?, ?)"
+
+  pool.query(query, [user.email, user.password], (err, result) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      res.status(500).send('Internal Server Error');
+      return;
+    }
+  
+    res.status(201).send();
+  });    
+})
+
+app.post('/users/login', async function (req, res) {
+  const {email, password} = req.body
+  
+
+  try {
+    const [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
+    
+    if (users.length === 0) {
+      return res.status(401).json({ message: 'Email does not exist' });
+    }
+
+    const hashedPassword = users[0].password;
+    const passwordMatch = await bcrypt.compare(password, hashedPassword);
+    console.log(hashedPassword, passwordMatch)
+    if (!passwordMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    res.status(200).json({ message: 'Login successful' });
+    res.redirect('/test')
+  }
+  catch {
+
+  }
+})
 
 app.get('/ring_data', async function (req, res) {
     try {
@@ -64,25 +109,36 @@ app.get('/ring_data', async function (req, res) {
 });
 
 app.get('/points', async function (req, res) {
-    try {
-        const [rows] = await pool.execute('SELECT * FROM points WHERE user_id = 1');
-        res.json(rows);
-    }
-    catch {
-
-    }
+  try {
+    const [rows] = await pool.execute('SELECT * FROM points ORDER BY weekly_points DESC LIMIT 4');
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching points:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
-app.get('/goals', async function (req, res) {
-    try {
-        const userId = 1;
-        const [rows] = await pool.execute(`SELECT title, description FROM UserGoals WHERE user_id =${userId}`);
-        res.json(rows);
-    }
-    catch {
+app.get('/goals/:user_id', async function (req, res) {
+  const userId = req.params.user_id;  
+  try {
+      const [rows] = await pool.execute(`SELECT * FROM UserGoals WHERE user_id=${userId}`);
+      res.json(rows);
+  }
+  catch {
 
-    }
-}); 
+  }
+});
+
+app.get('/points/:user_id', async function (req, res) {
+  const userId = req.params.user_id;  
+  try {
+      const [rows] = await pool.execute(`SELECT * FROM points WHERE user_id=${userId}`);
+      res.json(rows);
+  }
+  catch {
+
+  }
+});
 
 app.post('/goals', (req, res) => {
     const { title, description } = req.body;
@@ -101,6 +157,35 @@ app.post('/goals', (req, res) => {
     });
   });
 
+  app.put('/goals', (req, res) => {
+    const { title, description, goalId } = req.body;
+    const query = 'UPDATE UserGoals SET title = ?, description = ? WHERE goal_id = ?';
+  
+    pool.query(query, [title, description, goalId], (err, results) => {
+      if (err) {
+        console.error('Error executing query: ' + err.stack);
+        res.status(500).json({ error: 'Internal Server Error' });
+        return;
+      }
+      console.log('Query executed successfully'); // Add this line
+      res.status(200).json({ message: 'Goal updated successfully!' });
+    });
+  });
+
+  app.delete('/goals/:goalId', (req, res) => {
+    const { goalId } = req.params; // Extract goalId from URL parameters
+  
+    const query = 'DELETE FROM UserGoals WHERE goal_id = ?';
+    pool.query(query, [goalId], (err, results) => {
+      if (err) {
+        console.error('Error executing query: ' + err.stack);
+        res.status(500).json({ error: 'Internal Server Error' });
+        return;
+      }
+      res.status(200).json({ message: 'Goal deleted successfully!' });
+    });
+  });
+  
 app.use('/auth', authRoutes);
 
 app.listen(PORT, () => console.log(`Listening on port ${PORT}`));

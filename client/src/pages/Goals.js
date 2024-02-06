@@ -12,11 +12,11 @@ const Goals = () => {
   const [description, setDescription] = useState('Default Description');
 
   useEffect(() => {
-    fetch('http://localhost:3001/goals')
+    fetch('http://localhost:3001/goals/1')
     .then(res => res.json())
     .then(goals => setGoals(goals))
   }, [])
-
+  
   const handleSubmit = (e) => {
     e.preventDefault();
     const newGoal = {title, description};
@@ -32,7 +32,7 @@ const Goals = () => {
     fetchGoals();
   }, []);
 
-  const fetchGoals = async () => {
+  const fetchGoals = async (e) => {
     try {
       const response = await fetch('/goals');
       if (response.ok) {
