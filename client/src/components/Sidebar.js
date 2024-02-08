@@ -4,6 +4,8 @@ import HomeIcon from '@mui/icons-material/Home';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
 
 const Sidebar = () => {
 
@@ -16,7 +18,7 @@ const Sidebar = () => {
     >
         <List>
             <ListItem disablePadding>
-            <ListItemButton component='a' href='/'>
+            <ListItemButton component='a' href='/dashboard'>
                 <ListItemIcon>
                     <HomeIcon style={{color: 'black'}}/>
                 </ListItemIcon>
@@ -32,11 +34,27 @@ const Sidebar = () => {
             </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-            <ListItemButton component='a' href='/tracking'>
+            <ListItemButton component='a' href='/running'>
                 <ListItemIcon>
                     <AutoGraphIcon style={{color: 'black'}}/>
                 </ListItemIcon>
-                <ListItemText primary="Tracking" />
+                <ListItemText primary="Running" />
+            </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+            <ListItemButton component='a' href='/lifting'>
+                <ListItemIcon>
+                    <FitnessCenterIcon style={{color: 'black'}}/>
+                </ListItemIcon>
+                <ListItemText primary="Lifting" />
+            </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+            <ListItemButton component='a' href='/diet'>
+                <ListItemIcon>
+                    <RestaurantIcon style={{color: 'black'}}/>
+                </ListItemIcon>
+                <ListItemText primary="Diet" />
             </ListItemButton>
             </ListItem>
         </List>

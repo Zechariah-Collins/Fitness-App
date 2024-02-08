@@ -10,9 +10,15 @@ const Goals = () => {
   const [goals, setGoals] = useState([])
   const [title, setTitle] = useState('My goal is...')
   const [description, setDescription] = useState('Default Description');
+  const token = localStorage.getItem('jwtToken')
 
   useEffect(() => {
-    fetch('http://localhost:3001/goals/1')
+    fetch('http://localhost:3001/goals/id', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+  })
     .then(res => res.json())
     .then(goals => setGoals(goals))
   }, [])
@@ -22,7 +28,9 @@ const Goals = () => {
     const newGoal = {title, description};
     fetch('http://localhost:3001/goals', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
       body: JSON.stringify(newGoal)
     }).then(console.log('New goal added'))
     

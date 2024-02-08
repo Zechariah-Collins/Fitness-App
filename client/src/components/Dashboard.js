@@ -11,44 +11,87 @@ import WeeklyChart from './Chart';
 import PersonIcon from '@mui/icons-material/Person';
 import CheckIcon from '@mui/icons-material/Check';
 import '../styles/Dashboard.css'
+
 const Dashboard = () => {
 
   const [ringData, setRingData] = useState([])
   const [dailyChallenge, setDailyChallenge] = useState(false)
-  console.log(dailyChallenge)
+  const token = localStorage.getItem('jwtToken')
   useEffect(() => {
-    fetch('http://localhost:3001/ring_data')
-    .then(res => res.json())
-    .then(ringData => setRingData(ringData[0]))
-  }, [])
+    const fetchData = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/ring_data', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
+        }
+  
+        const ringData = await response.json();
+        console.log(ringData)
+        if (ringData && ringData.length > 0) {
+          setRingData(ringData[0]);
+        } else {
+          throw new Error('No data received');
+        }
+      } catch (error) {
+        console.error('Error fetching ring data:', error);
+        // Handle error, show error message, etc.
+      }
+    };
+  
+    fetchData();
+  }, []);
 
   const [points, setPoints] = useState([])
   useEffect(() => {
-    fetch('http://localhost:3001/points')
+    fetch('http://localhost:3001/points', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+    })
     .then(res => res.json())
     .then(points => setPoints(points))
   }, [])
 
   const [user, setUser] = useState([])
+  
   useEffect(() => {
-    const user_id = 1
-    fetch(`http://localhost:3001/points/${user_id}`)
+    fetch(`http://localhost:3001/points/id`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+    })
     .then(res => res.json())
     .then(user => setUser(user))
   }, [])
 
-  const ringsArray = ringData ? [
+  const ringsArray = ringData.length > 0 ? [
     { filledPercentage: ringData.sleep, color: '#00A8E8' },
     { filledPercentage: ringData.diet, color: '#007EA7' },
     { filledPercentage: ringData.exercise, color: '#003459' },
-  ] : null;
+  ] : [
+    { filledPercentage: .9, color: '#00A8E8' },
+    { filledPercentage: .8, color: '#007EA7' },
+    { filledPercentage: .7, color: '#003459' }]
+  ;
 
   const columnColors = [
-    '#00A8E8',
     '#8ADFFF',
+    '#00A8E8',
     '#007EA7',
     '#003459',
+    
 ]
+
+const sortedData = points.sort((a, b) => b.weekly_points - a.weekly_points);
+console.log(sortedData)
   return (
     <Box flex={6} bgcolor='#003459' sx={{display: 'flex', flexWrap: 'wrap'}}>
         <Box sx={{color:'white', margin:'10px'}}>Dashboard</Box>
@@ -80,18 +123,22 @@ const Dashboard = () => {
                             }} 
                         >
                             <Box sx={{display:'flex', alignItems:'center'}}>
+                                
                                 <ActivityRings 
                                     rings={ringsArray}
                                     options={{ containerWidth: 150, backgroundOpacity: 0.3 }}
                                 />
+                                    
+                                
                                 <Box sx={{display:'flex', flexDirection: 'column', marginTop:'10px', marginBottom:'10px'}}>
                                     <FitnessCenterIcon sx={{bgcolor: '#003459', color: 'white', margin:.5, borderRadius:'10%'}}/>
-                                    {ringData.exercise * 100}%
+                                    {ringData.exercise || .7 * 100}%
                                     <RestaurantIcon sx={{bgcolor: '#007EA7', color: 'white', margin:.5, borderRadius:'10%'}}/>
-                                    {ringData.diet * 100}%
+                                    {ringData.diet || .8 * 100}%
                                     <HotelIcon sx={{bgcolor: '#00A8E8', color: 'white', margin:.5, borderRadius:'10%'}}/>
-                                    {ringData.sleep * 100}%
+                                    {ringData.sleep || .9 * 100}%
                                 </Box>
+                                
                             </Box>
                         
                         </Box>
@@ -108,12 +155,18 @@ const Dashboard = () => {
                         
                         >
                         <GroupsIcon style={{color:'white', fontSize:'35px'}}/>
-                        <Box style={{color:'white', display:'flex'}}> {user.map((item) => (
-                            <div display='flex' key={item.user_id}>
-                                {`${item.weekly_points}  points `}
-                            </div>
-                            ))}
-                        </Box>
+                        {user.length > 0 ?
+                            <Box style={{color:'white', display:'flex'}}> {user.map((item) => (
+                                <div display='flex' key={item.user_id}>
+                                    {`${item.weekly_points}  points `}
+                                </div>
+                                ))}
+                            </Box>
+                        : 
+                            <Box style={{color:'white', display:'flex'}}> 
+                                No Points
+                            </Box>
+                        }
                     </Box>
                 </Box>
                     </Box>
@@ -132,7 +185,7 @@ const Dashboard = () => {
                     <h3 style={{marginLeft:'10px'}}> Daily Challenge </h3>
                     <Box display='flex' justifyContent='center' flexDirection='row'>
                     <Button
-                        onClick={() => dailyChallenge !==true && setDailyChallenge(prevState => !prevState)}
+                        onClick={() => setDailyChallenge(prevState => !prevState)}
                         className={`custom-button ${dailyChallenge ? 'active' : ''}`}
                         sx={{
                             backgroundColor: 'black',
@@ -146,17 +199,20 @@ const Dashboard = () => {
 
                             "&:active": {
                             backgroundColor: '#007EA7',
-                            width: '85px',
-                            height: '85px',
+                            borderRadius:'0px',
+                            width: '200px',
+                            height: '100px',
                             },
 
                             "&.active": {
                             backgroundColor: '#007EA7',
-                            width: '85px',
-                            height: '85px',
+                            borderRadius:'0px',
+                            width: '200px',
+                            height: '100px',
                             },
                             "&.active:hover": {
                             backgroundColor: '#003459',
+                            width: '200px',
                             }
                         }}
                     >
@@ -168,11 +224,9 @@ const Dashboard = () => {
                                 }} 
                             />
                         ) : (
-                            <CheckIcon 
-                                style={{ 
-                                    color: 'white', 
-                                    fontSize: '35px' 
-                                }} />
+                            <div>
+                                <p style={{ color: 'white', textTransform: 'none' }}>Complete a 20-minute brisk walk or jog.</p>
+                            </div>
                         )}
                     </Button>
                     </Box>
@@ -218,8 +272,7 @@ const Dashboard = () => {
                     justifyContent:'space-between',
                     color:'white'
                     }}>
-
-                    {points.map((item, index) => (
+                    {sortedData.map((item, index) => (
                         <div display='flex' 
                             style={{
                                 display:'flex', 
@@ -242,7 +295,7 @@ const Dashboard = () => {
                                 <PersonIcon/>
                             </Box>
                             <Box display='flex' width='120px'>
-                                <span style={{color:`${columnColors[index]}`}}>{item.first_name} - {item.weekly_points}</span>
+                                <span style={{color:`${columnColors[index]}`}}>{item.first_name} - {item.weekly_points} </span>
                             </Box>
                         </div>
                     ))}

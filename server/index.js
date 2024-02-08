@@ -13,7 +13,7 @@ require('dotenv').config();
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
   });
 
 app.use(async function(req, res, next) {
@@ -39,6 +39,7 @@ app.use(async function(req, res, next) {
 app.use(cors());
 app.use(express.json());
 
+const userId = [];
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
@@ -59,17 +60,16 @@ app.post('/users', async function (req, res) {
   const salt = await bcrypt.genSalt()
   const hashedPassword = await bcrypt.hash(req.body.password, salt)
   console.log(salt, hashedPassword)
-  const user = { email: req.body.email, password: hashedPassword }
-  const query = "INSERT INTO users (email, password) VALUES (?, ?)"
+  const user = { email: req.body.email, password: hashedPassword, name: req.body.name }
+  const user_query = "INSERT INTO users (email, password, name) VALUES (?, ?, ?)"
 
-  pool.query(query, [user.email, user.password], (err, result) => {
+  pool.query(user_query, [user.email, user.password, user.name], (err, result) => {
     if (err) {
       console.error('Error executing query:', err);
       res.status(500).send('Internal Server Error');
       return;
     }
-  
-    res.status(201).send();
+    
   });    
 })
 
@@ -79,28 +79,40 @@ app.post('/users/login', async function (req, res) {
 
   try {
     const [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
-    
+    const user_id = {id: users[0].user_id}
+    const accessToken = jwt.sign(user_id, process.env.ACCESS_TOKEN_SECRET);
+
     if (users.length === 0) {
       return res.status(401).json({ message: 'Email does not exist' });
     }
-
+    
+    userId.push(users[0].user_id)
     const hashedPassword = users[0].password;
     const passwordMatch = await bcrypt.compare(password, hashedPassword);
-    console.log(hashedPassword, passwordMatch)
+    const points_query = "INSERT INTO points (user_id, weekly_points, first_name) VALUES (?, ?, ?)"
+
+    pool.query(points_query, [users[0].user_id, 0, users[0].name], (err, result) => {
+      if (err) {
+        console.error('Error executing query:', err);
+        res.status(500).send('Internal Server Error');
+        return;
+      }
+      
+    });   
+    //console.log(hashedPassword, passwordMatch)
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-    res.status(200).json({ message: 'Login successful' });
-    res.redirect('/test')
+    res.json({ accessToken: accessToken })
   }
   catch {
 
   }
 })
 
-app.get('/ring_data', async function (req, res) {
+app.get('/ring_data', authenticateToken, async function (req, res) {
     try {
-        const [rows] = await pool.execute('SELECT * FROM ring_data WHERE id = 1');
+        const [rows] = await pool.execute(`SELECT * FROM ring_data WHERE user_id =${req.user_id.id}`);
         res.json(rows);
     }
     catch {
@@ -108,7 +120,7 @@ app.get('/ring_data', async function (req, res) {
     }
 });
 
-app.get('/points', async function (req, res) {
+app.get('/points', authenticateToken, async function (req, res) {
   try {
     const [rows] = await pool.execute('SELECT * FROM points ORDER BY weekly_points DESC LIMIT 4');
     res.json(rows);
@@ -118,10 +130,10 @@ app.get('/points', async function (req, res) {
   }
 });
 
-app.get('/goals/:user_id', async function (req, res) {
-  const userId = req.params.user_id;  
+app.get('/goals/:user_id', authenticateToken,async function (req, res) {
+  const userId = req.user_id.id  
   try {
-      const [rows] = await pool.execute(`SELECT * FROM UserGoals WHERE user_id=${userId}`);
+      const [rows] = await pool.execute(`SELECT * FROM UserGoals WHERE user_id=${req.user_id.id}`);
       res.json(rows);
   }
   catch {
@@ -129,10 +141,9 @@ app.get('/goals/:user_id', async function (req, res) {
   }
 });
 
-app.get('/points/:user_id', async function (req, res) {
-  const userId = req.params.user_id;  
+app.get('/points/:user_id', authenticateToken, async function (req, res) {
   try {
-      const [rows] = await pool.execute(`SELECT * FROM points WHERE user_id=${userId}`);
+      const [rows] = await pool.execute(`SELECT * FROM points WHERE user_id=${req.user_id.id}`);
       res.json(rows);
   }
   catch {
@@ -140,11 +151,10 @@ app.get('/points/:user_id', async function (req, res) {
   }
 });
 
-app.post('/goals', (req, res) => {
+app.post('/goals', authenticateToken, (req, res) => {
     const { title, description } = req.body;
-    const userId = 1; // Hardcoded user_id for this example
-  
-    const query = 'INSERT INTO UserGoals (title, description, user_id) VALUES (?, ?, ?)';
+    const userId = req.user_id.id;
+    const query = `INSERT INTO UserGoals (title, description, user_id) VALUES (?, ?, ?)`;
   
     pool.query(query, [title, description, userId], (err, results) => {
       if (err) {
@@ -157,7 +167,7 @@ app.post('/goals', (req, res) => {
     });
   });
 
-  app.put('/goals', (req, res) => {
+  app.put('/goals', authenticateToken,(req, res) => {
     const { title, description, goalId } = req.body;
     const query = 'UPDATE UserGoals SET title = ?, description = ? WHERE goal_id = ?';
   
@@ -172,7 +182,7 @@ app.post('/goals', (req, res) => {
     });
   });
 
-  app.delete('/goals/:goalId', (req, res) => {
+  app.delete('/goals/:goalId', authenticateToken, (req, res) => {
     const { goalId } = req.params; // Extract goalId from URL parameters
   
     const query = 'DELETE FROM UserGoals WHERE goal_id = ?';
@@ -186,6 +196,98 @@ app.post('/goals', (req, res) => {
     });
   });
   
+  app.get('/runs', authenticateToken, async (req, res) => {
+  
+    try{
+      const [rows] = await pool.execute(`SELECT * FROM RunGoals WHERE ${req.user_id.id}`);
+      //console.log(rows);
+      res.json(rows);
+    }
+    catch(err){
+      
+    }
+  });
+
+
+  app.put('/points/run', authenticateToken, async (req, res) => {
+    const {points} = req.body;
+    const [rows] = await pool.execute(`SELECT * FROM points WHERE user_id=${req.user_id.id}`);
+    let weekly_points;
+    if (rows && rows.length > 0 && rows[0].weekly_points !== undefined) {
+      weekly_points = rows[0].weekly_points + points;
+    } else {
+      weekly_points = points;
+    }
+    const query = 'UPDATE points SET weekly_points = ? WHERE user_id = ?';
+    pool.query(query, [weekly_points, req.user_id.id], (err, results) => {
+      if (err) {
+        console.error('Error executing query: ' + err.stack);
+      }
+    })
+  })
+
+  app.put('/points/lift', authenticateToken, async (req, res) => {
+    const {points} = req.body;
+    const [rows] = await pool.execute(`SELECT * FROM points WHERE user_id=${req.user_id.id}`);
+    let weekly_points;
+    if (rows && rows.length > 0 && rows[0].weekly_points !== undefined) {
+      weekly_points = rows[0].weekly_points + points;
+    } else {
+      weekly_points = points;
+    }
+    const query = 'UPDATE points SET weekly_points = ? WHERE user_id = ?';
+    pool.query(query, [weekly_points, req.user_id.id], (err, results) => {
+      if (err) {
+        console.error('Error executing query: ' + err.stack);
+      }
+    })
+  })
+
+  app.put('/points/diet', authenticateToken, async (req, res) => {
+    const {points} = req.body;
+    const [rows] = await pool.execute(`SELECT * FROM points WHERE user_id=${req.user_id.id}`);
+    let weekly_points;
+    if (rows && rows.length > 0 && rows[0].weekly_points !== undefined) {
+      weekly_points = rows[0].weekly_points + points;
+    } else {
+      weekly_points = points;
+    }
+    const query = 'UPDATE points SET weekly_points = ? WHERE user_id = ?';
+    pool.query(query, [weekly_points, req.user_id.id], (err, results) => {
+      if (err) {
+        console.error('Error executing query: ' + err.stack);
+      }
+    })
+  })
+
+  function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    //console.log('Token:', token); // Add this line
+    if (token == null) return res.sendStatus(401);
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user_id) => {
+      if (err) return res.sendStatus(403);
+      req.user_id = user_id;
+      
+      next();
+    });
+  
+  }
+
+
+
+  app.get('/dashboard', authenticateToken, (req, res) => {
+    // Route handler logic...
+  });
+
+  app.get('/goals', authenticateToken, (req, res) => {
+    // Route handler logic...
+  });
+
+  app.get('/tracking', authenticateToken, (req, res) => {
+    // Route handler logic...
+  });
+
 app.use('/auth', authRoutes);
 
 app.listen(PORT, () => console.log(`Listening on port ${PORT}`));

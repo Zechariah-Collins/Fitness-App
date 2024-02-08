@@ -38,6 +38,7 @@ export default function SignUp() {
         const userData = {
             email: data.get('email'),
             password: data.get('password'),
+            name: data.get('name'),
         }
         await fetch('http://localhost:3001/users', {
             method: 'POST',
@@ -67,7 +68,17 @@ export default function SignUp() {
             </Typography>
             <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3 }}>
                 <Grid container spacing={2}>
-                
+                <Grid item xs={12} sm={12}>
+                <TextField
+                  autoComplete="given-name"
+                  name="name"
+                  required
+                  fullWidth
+                  id="name"
+                  label="Name"
+                  autoFocus
+                />
+              </Grid>
                     <Grid item xs={12}>
                         <TextField
                         required

@@ -11,7 +11,8 @@ const EditableBox = (props) => {
   const [title, setTitle] = useState(props.item.title);
   const [description, setDescription] = useState(props.item.description);
   const [goalId, setGoalId] = useState(props.item.goal_id);
-  
+  const token = localStorage.getItem('jwtToken')
+
   const handleTitleChange = (e) => {
     setTitle(e.target.value);
   };
@@ -31,7 +32,8 @@ const EditableBox = (props) => {
 
     await fetch(`http://localhost:3001/goals`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`},
       body: JSON.stringify(data),
     });
   };
@@ -39,7 +41,10 @@ const EditableBox = (props) => {
   const deleteGoal = async (e) => {
     await fetch(`http://localhost:3001/goals/${goalId}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+     }
     });
   }
 

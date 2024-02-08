@@ -46,9 +46,12 @@ export default function SignIn() {
         headers: {'Content-Type': 'application/json'},
         body: await JSON.stringify(userData)
     })
+    const responseData = await response.json()
+    const token = responseData.accessToken;
+    localStorage.setItem('jwtToken', token);
     if (response.ok) {
         // Authentication successful, navigate to the dashboard
-        navigate('/');
+        navigate('/dashboard');
     }
   };
 
